@@ -141,6 +141,11 @@ getcmd(char *buf, int nbuf)
   return 0;
 }
 
+
+
+
+
+
 int
 main(void)
 {
@@ -164,12 +169,27 @@ main(void)
         printf(2, "cannot cd %s\n", buf+3);
       continue;
     }
+    if(buf[0] == 'w' && buf[1] == 'h' && buf[2] == 'o' && buf[3] == 'a' && buf[4] == 'm' && buf[5] == 'i')//getcmd == whoami
+       {
+          printf(1,"Behrang Moradi COMP-3300 Student!!!\n");//print whoami
+         continue; //this contiune is important 
+       }
+    if(buf[0] =='e' && buf[1] == 'x' && buf[2] == 'i' && buf[3] == 't'){
+        printf(1,"Please Enter [ctrl a] + [x] to exit!\n");
+        continue;
+    }
+
+    
     if(fork1() == 0)
       runcmd(parsecmd(buf));
     wait();
+   
   }
   exit();
+
 }
+
+
 
 void
 panic(char *s)
