@@ -89,3 +89,10 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int
+sys_pstate(void)
+{
+  pstate(); 
+  return 0 ; 
+}
