@@ -496,6 +496,47 @@ kill(int pid)
   return -1;
 }
 
+// ****************************************************************************************************************************************//
+void 
+pstate(void)
+{
+  static char *states[] = {
+  [UNUSED]    "unused",
+  [EMBRYO]    "embryo",
+  [SLEEPING]  "sleep ",
+  [RUNNABLE]  "runble",
+  [RUNNING]   "run   ",
+  [ZOMBIE]    "zombie"
+  };
+  struct proc *p;
+  int total = 0 ; 
+  
+  cprintf(" pid\tname\tstate\tparent\n ");
+  cprintf("\b---------------------------------------\n");
+  acquire(&ptable.lock);
+   for(p = ptable.proc; p < &ptable.proc[NPROC] && p->pid != 0; p++)
+   {
+      //cprintf("%d\t%s\t%s\t%s\n", p->pid, p->name, p->state, ( strcmp(p->name, "init") ? p->name : p->parent->name));
+      cprintf("%d\t%s\t%s\t%s\n", p->pid, p->name , states[p->state] , (( p->pid == 1 ) ? p->name : p->parent->name));
+
+      if((p->state == SLEEPING) || (p->state == RUNNABLE) || (p->state == RUNNING) || (p->state == ZOMBIE)  || (p->state == RUNNING))
+     {
+         total += 1; 
+     }
+   }
+
+  cprintf("\nTOTAL: [%d]\n",total);
+
+   for (int i = 0; i < ncpu; i++)
+   {
+       cprintf("CPU [%d]: %s\n", cpuid(), cpus[i].proc->name);
+      // cprintf("CPU [%d]: %s\n", i, cpus[i].proc->name);
+   }
+
+  release(&ptable.lock);   
+}//END FUNCTION pstate()
+// ****************************************************************************************************************************************//
+
 //PAGEBREAK: 36
 // Print a process listing to console.  For debugging.
 // Runs when user types ^P on console.

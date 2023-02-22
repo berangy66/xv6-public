@@ -2,9 +2,9 @@
 //Changing header files may also assist in implementing this
 //Note that inside the kernel, cprintf() is what is used to print to the console. Once inside the kernel, various information pertaining to the process struct must be printed. 
 
-#include "defs.h"
-#include "types"
 
+#include "types.h"
+#include "defs.h"
 
 int main()
 {
