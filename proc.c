@@ -527,10 +527,10 @@ pstate(void)
 
   cprintf("\nTOTAL: [%d]\n",total);
 
-   for (int i = 0; i < ncpu; i++)
+   for (int i = 0; i < ncpu; ++i)
    {
-       cprintf("CPU [%d]: %s\n", cpuid(), cpus[i].proc->name);
-      // cprintf("CPU [%d]: %s\n", i, cpus[i].proc->name);
+       //cprintf("CPU [%d]: %s\n", cpuid(), cpus[i].proc->name);
+       cprintf("CPU [%d]: %s\n", i, cpus[i].proc->name);
    }
 
   release(&ptable.lock);   
