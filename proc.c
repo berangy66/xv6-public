@@ -7,6 +7,10 @@
 #include "proc.h"
 #include "spinlock.h"
 
+
+
+
+
 struct {
   struct spinlock lock;
   struct proc proc[NPROC];
@@ -207,7 +211,7 @@ fork(void)
     if(curproc->ofile[i])
       np->ofile[i] = filedup(curproc->ofile[i]);
   np->cwd = idup(curproc->cwd);
-
+  
   safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
   pid = np->pid;
@@ -246,7 +250,6 @@ exit(void)
   iput(curproc->cwd);
   end_op();
   curproc->cwd = 0;
-
   acquire(&ptable.lock);
 
   // Parent might be sleeping in wait().
@@ -497,10 +500,11 @@ kill(int pid)
 }
 
 // ****************************************************************************************************************************************//
+// ** pstate works like ps in UNIX. It prints the process table. It prints the pid, name, state and parent of each process in the process table. **//
 void 
 pstate(void)
 {
-  static char *states[] = {
+  static char *states[] = { 
   [UNUSED]    "unused",
   [EMBRYO]    "embryo",
   [SLEEPING]  "sleep ",
@@ -509,15 +513,14 @@ pstate(void)
   [ZOMBIE]    "zombie"
   };
   struct proc *p;
-  int total = 0 ; 
-  
+  int total = 0 ;
   cprintf(" pid\tname\tstate\tparent\n ");
   cprintf("\b---------------------------------------\n");
   acquire(&ptable.lock);
    for(p = ptable.proc; p < &ptable.proc[NPROC] && p->pid != 0; p++)
    {
-      cprintf("%d\t%s\t%s\t%s\n", p->pid, p->name , states[p->state] , (( p->pid == 1 ) ? p->name : p->parent->name));
-      if((p->state == SLEEPING) || (p->state == RUNNABLE) || (p->state == RUNNING) || (p->state == ZOMBIE)  || (p->state == RUNNING))
+     cprintf("%d\t%s\t%s\t%s\n", p->pid, p->name , states[p->state] , (( p->pid == 1 ) ? "(init)" : p->parent->name));
+      if((p->state == SLEEPING) || (p->state == RUNNABLE) || (p->state == RUNNING) || (p->state == ZOMBIE)  || (p->state == EMBRYO) || (p->state == UNUSED))
        {
          total += 1; 
        }
@@ -525,7 +528,6 @@ pstate(void)
   cprintf("\nTOTAL: [%d]\n",total);
    for (int i = 0; i < ncpu; ++i)
    {
-       //cprintf("CPU [%d]: %s\n", cpuid(), cpus[i].proc->name);//why isnt working 
        cprintf("CPU [%d]: %s\n", i, cpus[i].proc->name);
    }
   release(&ptable.lock);   
