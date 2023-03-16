@@ -532,3 +532,77 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+
+
+// ****************************************************************************************************************************************//
+// ** ps works like ps in UNIX. It prints the process table and CPU information. It prints the pid, name, state and parent of each process in the process table. **//
+void 
+ps(void)
+{
+  static char *states[] = {  //Array of strings representing process states
+  [UNUSED]    "unused", //process is unused for future use
+  [SLEEPING]  "sleep ", //process is sleeping
+  [RUNNABLE]  "runble", //process is runnable
+  [RUNNING]   "run   ", //process is running
+  };//end of states array *states[]
+
+  struct proc *p; //pointer to a process struct  
+  int total = 0 ; // Variable total to keep track of the total number of processes in (Sleep, Runnable and &running ) states
+  
+  cprintf(" pid\tname\tstate\tparent\tpriority\n "); //printf header for pstate table 
+  cprintf("\b---------------------------------------\n");
+
+  acquire(&ptable.lock); // acuire lock to access process table 
+   for(p = ptable.proc; p < &ptable.proc[NPROC] && p->pid != 0; p++) //iterate over all processes in process table 
+   {  
+    if(p->state == UNUSED) // if process is unused , skip it
+    {
+      continue; // skip to next process
+    }//end of if
+    //print process information ,includeing process ID (pid), name, state , & parent name (with special case for 'init' process)
+     cprintf("%d\t%s\t%s\t%s\t   %d\n", p->pid, p->name , states[p->state] , (( p->pid == 1 ) ? "(init)" : p->parent->name), p->priority);
+      if((p->state == SLEEPING) || (p->state == RUNNABLE) || (p->state == RUNNING))
+       {//if process is in (Sleep, Runnable and &running ) states , increment total
+         total += 1; 
+       }//end of if
+   }
+  cprintf("\nTOTAL: [%d]\n",total); //print number of processes
+   for (int i = 0; i < ncpu; ++i) // iterate over all CPUs  , 
+   {  //print name of process currently runing on CPU and its nuymber 
+    struct cpu *c = &cpus[i]; //pointer to a cpu struct
+    struct proc *p = c->proc; //pointer to a process struct
+
+    if(p !=  0 && p->state == RUNNING) //only print CPU information if a process is running on the CPU
+     {
+      cprintf("CPU [%d]: %s\n", cpus[i].apicid, cpus[i].proc->name);
+       //cprintf("CPU [%d]: %s\n", i, cpus[i].proc->name);
+        //cprintf("CPU [%d]: %s\n", c->apicid, c->proc->name);
+     } //END IF
+   }//END FOR LOOP
+
+  release(&ptable.lock);   //release ptable lock 
+  
+}//END FUNCTION pstate()
+// ****************************************************************************************************************************************//
+
+
+// ****************************************************************************************************************************************//
+// ** chprty changes the priority of a process. It takes two arguments: the pid of the process and the new priority. **//
+int
+set(int pid , int priority)
+{
+  struct proc *p; //pointer to a process struct
+
+  acquire(&ptable.lock); //acquire lock to access process table
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) //iterate over all processes in process table
+  {
+    if(p->pid == pid) //if process is found
+    {
+      p->priority = priority; //set new priority
+      release(&ptable.lock); //release lock
+      return 0; //return 0
+    }//end of if
+  }//end of for loop
+  return -1; //return -1 if process is not found 
+}

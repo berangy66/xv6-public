@@ -120,6 +120,9 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+void           ps(void); //print process status
+int           set(int , int );//set priority Note: change it from set(void) to set(int, int)
+
 
 // swtch.S
 void            swtch(struct context**, struct context*);

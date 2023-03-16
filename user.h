@@ -23,6 +23,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int ps(void); //print process status 
+int set(int , int ); //set priority Note: change it from set(void) to set(int, int)
 
 // ulib.c
 int stat(const char*, struct stat*);
