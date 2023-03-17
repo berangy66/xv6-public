@@ -1,3 +1,10 @@
+//PRIORITY VALUES FOR PROCESSES
+#define HIGH_PRIORITY 0
+#define LOW_PRIORITY 100
+#define DEFAULT_PRIORITY 0 //Default priority is 1
+
+
+
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -32,6 +39,8 @@ struct context {
   uint eip;
 };
 
+
+
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
@@ -50,6 +59,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int priority;                // Process priority (0-100) 0 is highest priority and 100 is lowest priority
+  int ticks;                  // Number of ticks the process has been running
 };
 
 // Process memory is laid out contiguously, low addresses first:
