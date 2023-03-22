@@ -113,14 +113,8 @@ sys_set(void)
   if((argint(0, &pid) < 0) || (argint(1, &priority) < 0)) // if the pid or priority is not an integer return -1
   {
     return -1;
-    exit(); // exit the process
   }
-  // if(priority < 0 || priority > 8) // if the priority is not between 0 and 100 return -1
-  // {
-  //   return -1;
-  //   exit(); // exit the process
-    
-  // }
+  
   return set(pid, priority); // set the priority of the process with pid = pid to priority
 
 }

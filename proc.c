@@ -88,7 +88,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
-  p->priority = DEFAULT_PRIORITY; // default priority IS 60 , #define DEFAULT_PRIORITY 60 is in proc.h 
+ p->priority = DEFAULT_PRIORITY; // default priority IS 8, #define DEFAULT_PRIORITY 8 is in proc.h 
 
 
   release(&ptable.lock);
@@ -322,41 +322,41 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
-void
-scheduler(void)
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
-  c->proc = 0;
+// void
+// scheduler(void)
+// {
+//   struct proc *p;
+//   struct cpu *c = mycpu();
+//   c->proc = 0;
   
-  for(;;){
-    // Enable interrupts on this processor.
-    sti();
+//   for(;;){
+//     // Enable interrupts on this processor.
+//     sti();
 
-    // Loop over process table looking for process to run.
-    acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
+//     // Loop over process table looking for process to run.
+//     acquire(&ptable.lock);
+//     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+//       if(p->state != RUNNABLE)
+//         continue;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+//       // Switch to chosen process.  It is the process's job
+//       // to release ptable.lock and then reacquire it
+//       // before jumping back to us.
+//       c->proc = p;
+//       switchuvm(p);
+//       p->state = RUNNING;
 
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
+//       swtch(&(c->scheduler), p->context);
+//       switchkvm();
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
-    }
-    release(&ptable.lock);
+//       // Process is done running for now.
+//       // It should have changed its p->state before coming back.
+//       c->proc = 0;
+//     }
+//     release(&ptable.lock);
 
-  }
-}
+//   }
+// }
 
 
 // Enter scheduler.  Must hold only ptable.lock
@@ -604,7 +604,6 @@ set(int pid , int priority)
     if(p->pid == pid) //if process is found
     {
       p->priority = priority; //set new priority
-    
      break; 
     }//end of if
   }//end of for loop
@@ -613,6 +612,68 @@ set(int pid , int priority)
   return pid; //return pid if process is found
 }
 
+//****************************************************************************************************************************************//
+//scheduler function to implement priority scheduling && round robin scheduling in xv6 if the priority is the same
+//****************************************************************************************************************************************//
+void
+scheduler(void)
+{
+  struct proc *p; //pointer to a process struct p variable to hold the process table value 
+  struct proc *p1;//pointer to a process struct p1 variable to hold the process table value 
+  struct proc *highpriority; //pointer to a process struct variable to hold the process with the highest priority
+  struct cpu *c = mycpu(); //pointer to a cpu struct
+  c->proc = 0; //set current process to 0
 
+  for(;;){
+    // Enable interrupts on this processor.
+    sti();
+ 
+    // Loop over process table looking for process to run.
+    acquire(&ptable.lock);
+     
+   
+      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) //iterate over all processes in process table
+      {
+        if(p->state != RUNNABLE) //if process state is not Runnable , skip it
+        {
+          continue;
+        }
+
+       highpriority = p; //if a process state is Runnable assign it to high priority
+     
+         for(p1= ptable.proc; p1 < &ptable.proc[NPROC]; p1++) //iterate over all processes in process table
+        {
+              if(p1->state != RUNNABLE) //if process state is not Runnable , skip it
+        {
+          continue;
+        }
+        if(highpriority->priority > p1->priority ) //if a process state is Runnable and has higher priority than the current high priority process , assign it to high priority
+        {
+            highpriority = p1;  //assign process with higher priority to high priority
+     
+            // Switch to chosen process.  It is the process's job
+            // to release ptable.lock and then reacquire it
+            // before jumping back to us.
+           
+          }//end of if 
+
+            }//end of inner for loop
+             p = highpriority; //assign high priority process to p
+            c->proc = p; //assign high priority process to current process
+            switchuvm(p); //switch to high priority process in u virtual memory table 
+            p->state = RUNNING;  //set high priority process state to running
+
+            swtch(&(c->scheduler), p->context); //c->scheduler is the address of the scheduler function and p->context is the address of the high priority process context
+            switchkvm();  //switch to kernel virtual memory table
+
+            // Process is done running for now.
+            // It should have changed its p->state before coming back.
+            c->proc = 0; //set current process to 0
+     
+    
+    }//end of outer for loop
+    release(&ptable.lock);
+  } //end of infinite for loop
+}//end of scheduler function
 
 

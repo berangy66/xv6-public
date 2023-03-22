@@ -1,7 +1,7 @@
 //PRIORITY VALUES FOR PROCESSES
 #define HIGH_PRIORITY 0
-#define LOW_PRIORITY 0
-#define DEFAULT_PRIORITY 8                //Default priority is 8
+#define LOW_PRIORITY 8
+#define DEFAULT_PRIORITY 0               //Default priority is 
 
 
 
