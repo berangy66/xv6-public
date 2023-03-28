@@ -123,19 +123,19 @@ found:
 void
 userinit(void)
 {
-  struct proc *p;
-  extern char _binary_initcode_start[], _binary_initcode_size[];
+  struct proc *p; // p is a pointer to a process
+  extern char _binary_initcode_start[], _binary_initcode_size[]; //
 
-  p = allocproc();
+  p = allocproc(); // allocate a process
   
-  initproc = p;
-  if((p->pgdir = setupkvm()) == 0)
+  initproc = p; //
+  if((p->pgdir = setupkvm()) == 0) 
     panic("userinit: out of memory?");
-  inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size);
-  p->sz = PGSIZE;
+  inituvm(p->pgdir, _binary_initcode_start, (int)_binary_initcode_size); // initialize the user memory of the process p with the initcode
+  p->sz = PGSIZE; // set the size of the process p to PGSIZE
   memset(p->tf, 0, sizeof(*p->tf));
-  p->tf->cs = (SEG_UCODE << 3) | DPL_USER;
-  p->tf->ds = (SEG_UDATA << 3) | DPL_USER;
+  p->tf->cs = (SEG_UCODE << 3) | DPL_USER; 
+  p->tf->ds = (SEG_UDATA << 3) | DPL_USER; 
   p->tf->es = p->tf->ds;
   p->tf->ss = p->tf->ds;
   p->tf->eflags = FL_IF;
@@ -610,70 +610,125 @@ set(int pid , int priority)
   //return -1; //return -1 if process is not found 
   release(&ptable.lock); //release lock
   return pid; //return pid if process is found
-}
+}//end of set()
+//****************************************************************************************************************************************//
 
+// ****************************************************************************************************************************************//
+//  scheduler function to implement priority scheduling && round robin scheduling in xv6 if the priority is the same
 //****************************************************************************************************************************************//
-//scheduler function to implement priority scheduling && round robin scheduling in xv6 if the priority is the same
-//****************************************************************************************************************************************//
+// PAGEBREAK: 42
+// Per-CPU process scheduler.
+// Each CPU calls scheduler() after setting itself up.
+// Scheduler never returns.  It loops, doing:
+//  - choose a process to run
+//  - swtch to start running that process
+//  - eventually that process transfers control
+//      via swtch back to the scheduler.
 void
 scheduler(void)
 {
-  struct proc *p; //pointer to a process struct p variable to hold the process table value 
-  struct proc *p1;//pointer to a process struct p1 variable to hold the process table value 
-  struct proc *highpriority; //pointer to a process struct variable to hold the process with the highest priority
-  struct cpu *c = mycpu(); //pointer to a cpu struct
-  c->proc = 0; //set current process to 0
-
+  struct proc *p;
+  struct cpu *c = mycpu();
+  c->proc = 0;
+  
   for(;;){
     // Enable interrupts on this processor.
     sti();
- 
+
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
+    for(int tracker = 0; tracker < 8; tracker++)// loop over all priorities and run the process with the highest priority
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE)
+        continue;
+
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      if(p->priority == tracker)  //if process priority is equal to the current priority
+      {
+      c->proc = p; //set current process to p
+      switchuvm(p); //switch to user mode
+      p->state = RUNNING; //set process state to running
+
+      swtch(&(c->scheduler), p->context); //switch to process context
+      switchkvm(); // switch to kernel mode
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0; //set current process to 0
+      }
+    }
+    release(&ptable.lock); //release lock
+
+  }
+}//end of scheduler()
+//****************************************************************************************************************************************//
+
+
+
+
+//****************************************************************************************************************************************//
+// Backup scheduler function to implement priority scheduling && round robin scheduling in xv6 if the priority is the same
+// this function is not used in the final code due to the fact that I have not been able to verify all the test cases, However, it is a working code
+//****************************************************************************************************************************************//
+// void
+// scheduler(void)
+// {
+//   struct proc *p; //pointer to a process struct p variable to hold the process table value 
+//   struct proc *p1;//pointer to a process struct p1 variable to hold the process table value 
+//   struct proc *highpriority; //pointer to a process struct variable to hold the process with the highest priority
+//   struct cpu *c = mycpu(); //pointer to a cpu struct
+//   c->proc = 0; //set current process to 0
+
+//   for(;;){
+//     // Enable interrupts on this processor.
+//     sti();
+ 
+//     // Loop over process table looking for process to run.
+//     acquire(&ptable.lock);
      
    
-      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) //iterate over all processes in process table
-      {
-        if(p->state != RUNNABLE) //if process state is not Runnable , skip it
-        {
-          continue;
-        }
+//       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) //iterate over all processes in process table
+//       {
+//         if(p->state != RUNNABLE) //if process state is not Runnable , skip it
+//         {
+//           continue;
+//         }
 
-       highpriority = p; //if a process state is Runnable assign it to high priority
+//        highpriority = p; //if a process state is Runnable assign it to high priority
      
-         for(p1= ptable.proc; p1 < &ptable.proc[NPROC]; p1++) //iterate over all processes in process table
-        {
-              if(p1->state != RUNNABLE) //if process state is not Runnable , skip it
-        {
-          continue;
-        }
-        if(highpriority->priority > p1->priority ) //if a process state is Runnable and has higher priority than the current high priority process , assign it to high priority
-        {
-            highpriority = p1;  //assign process with higher priority to high priority
+//          for(p1= ptable.proc; p1 < &ptable.proc[NPROC]; p1++) //iterate over all processes in process table
+//         {
+//               if(p1->state != RUNNABLE) //if process state is not Runnable , skip it
+//         {
+//           continue;
+//         }
+//         if(highpriority->priority > p1->priority ) //if a process state is Runnable and has higher priority than the current high priority process , assign it to high priority
+//         {
+//             highpriority = p1;  //assign process with higher priority to high priority
      
-            // Switch to chosen process.  It is the process's job
-            // to release ptable.lock and then reacquire it
-            // before jumping back to us.
+//             // Switch to chosen process.  It is the process's job
+//             // to release ptable.lock and then reacquire it
+//             // before jumping back to us.
            
-          }//end of if 
+//           }//end of if 
 
-            }//end of inner for loop
-             p = highpriority; //assign high priority process to p
-            c->proc = p; //assign high priority process to current process
-            switchuvm(p); //switch to high priority process in u virtual memory table 
-            p->state = RUNNING;  //set high priority process state to running
+//             }//end of inner for loop
+//              p = highpriority; //assign high priority process to p
+//             c->proc = p; //assign high priority process to current process
+//             switchuvm(p); //switch to high priority process in u virtual memory table 
+//             p->state = RUNNING;  //set high priority process state to running
 
-            swtch(&(c->scheduler), p->context); //c->scheduler is the address of the scheduler function and p->context is the address of the high priority process context
-            switchkvm();  //switch to kernel virtual memory table
+//             swtch(&(c->scheduler), p->context); //c->scheduler is the address of the scheduler function and p->context is the address of the high priority process context
+//             switchkvm();  //switch to kernel virtual memory table
 
-            // Process is done running for now.
-            // It should have changed its p->state before coming back.
-            c->proc = 0; //set current process to 0
+//             // Process is done running for now.
+//             // It should have changed its p->state before coming back.
+//             c->proc = 0; //set current process to 0
      
     
-    }//end of outer for loop
-    release(&ptable.lock);
-  } //end of infinite for loop
-}//end of scheduler function
-
-
+//     }//end of outer for loop
+//     release(&ptable.lock);
+//   } //end of infinite for loop
+// }//end of scheduler function
